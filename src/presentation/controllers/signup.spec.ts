@@ -10,7 +10,7 @@ interface SutTypes {
 
 const makeSut = (): SutTypes => {
   class EmailValidatorStub implements EmailValidator {
-    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade
+    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
     isValid (email: string): boolean {
       return true
     }
@@ -83,6 +83,7 @@ describe('SignUp Controller', () => {
 
   test('Should return 400 if an invalid is provided', async () => {
     const { sut, emailValidatorStub } = makeSut()
+    // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
     jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
     const httpRequest = {
       body: {
@@ -95,5 +96,20 @@ describe('SignUp Controller', () => {
     const httpResponse = await sut.handle(httpRequest)
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+  })
+
+  test('Shoud call EmailValidator with correct email', async () => {
+    const { sut, emailValidatorStub } = makeSut()
+    const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+    const httpRequest = {
+      body: {
+        name: 'nome',
+        email: 'testetest.com.br',
+        password: 'pass',
+        passwordConfirmation: 'pass'
+      }
+    }
+    await sut.handle(httpRequest)
+    expect(isValidSpy).toHaveBeenCalledWith('testetest.com.br')
   })
 })
