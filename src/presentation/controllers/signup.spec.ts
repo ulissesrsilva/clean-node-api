@@ -112,4 +112,21 @@ describe('SignUp Controller', () => {
     await sut.handle(httpRequest)
     expect(isValidSpy).toHaveBeenCalledWith('testetest.com.br')
   })
+
+  test('Should return 500 if EmailValidator throws error', async () => {
+    const { sut, emailValidatorStub } = makeSut()
+    // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
+    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+    const httpRequest = {
+      body: {
+        name: 'nome',
+        email: 'testetest.com.br',
+        password: 'pass',
+        passwordConfirmation: 'pass'
+      }
+    }
+    const httpResponse = await sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(400)
+    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+  })
 })
