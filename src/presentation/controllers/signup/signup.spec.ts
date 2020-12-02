@@ -117,7 +117,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('passwordConfirmation'))
   })
 
-  test('Should return 400 if an invalid is provided', async () => {
+  test('Should return 400 if an invalid email is provided', async () => {
     const { sut, emailValidatorStub } = makeSut()
     // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
     jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
@@ -200,5 +200,26 @@ describe('SignUp Controller', () => {
       const httpResponse = await sut.handle(httpRequest)
       expect(httpResponse.statusCode).toBe(500)
       expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  test('Should return 200 if a valid account is provided', async () => {
+    const { sut } = makeSut()
+    const httpRequest = {
+      body: {
+        _id: 'valid_id',
+        name: 'valid_name',
+        email: 'valid_email@mail.com',
+        password: 'valid_password',
+        passwordConfirmation: 'valid_password'
+      }
+    }
+    const httpResponse = await sut.handle(httpRequest)
+    expect(httpResponse.statusCode).toBe(200)
+    expect(httpResponse.body).toEqual({
+      _id: 'valid_id',
+      name: 'valid_name',
+      email: 'valid_email@mail.com',
+      password: 'valid_password'
+    })
   })
 })
