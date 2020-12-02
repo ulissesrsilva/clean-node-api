@@ -22,13 +22,14 @@ const makeEmailValidator = (): EmailValidator => {
 const makeAddAcount = (): AddAcount => {
   class AddAcountStub implements AddAcount {
     // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
-    add (account: AddAcountModel): AccountModel {
-      return {
+    async add (account: AddAcountModel): Promise<AccountModel> {
+      const fakeAccount = {
         _id: 'valid_id',
         name: 'valid_name',
         email: 'valid_email@mail.com',
         password: 'valid_password'
       }
+      return await new Promise(resolve => resolve(fakeAccount))
     }
   }
   return new AddAcountStub()
@@ -188,7 +189,7 @@ describe('SignUp Controller', () => {
 
   test('Should return 500 if AddAcount throws error', async () => {
       const { addAcountStub, sut } = makeSut()
-      jest.spyOn(addAcountStub, 'add').mockImplementationOnce(() => { throw new Error() })
+      jest.spyOn(addAcountStub, 'add').mockImplementationOnce(async () => { return await new Promise((resolve, reject) => { reject(new Error()) }) })
       const httpRequest = {
         body: {
           name: 'nome',
