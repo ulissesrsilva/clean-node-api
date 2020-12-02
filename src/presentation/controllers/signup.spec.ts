@@ -1,12 +1,16 @@
 import { SignUpController } from './signup'
 import { EmailValidator } from '../protocols'
 import { MissingParamError, InvalidParamError, ServerError } from '../errors'
+import { AccountModel } from '../../domain/models/account'
+import { AddAcountModel, AddAcount } from '../../domain/usecases/add-account'
 
 interface SutTypes {
   sut: SignUpController
   emailValidatorStub: EmailValidator
+  addAcountStub: AddAcount
 }
 
+// padrão factory
 const makeEmailValidator = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
     // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
@@ -17,10 +21,26 @@ const makeEmailValidator = (): EmailValidator => {
   return new EmailValidatorStub()
 }
 
+const makeAddAcount = (): AddAcount => {
+  class AddAcountStub implements AddAcount {
+    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
+    add (account: AddAcountModel): AccountModel {
+      return {
+        _id: 'valid_id',
+        name: 'valid_name',
+        email: 'valid_email@mail.com',
+        password: 'valid_password'
+      }
+    }
+  }
+  return new AddAcountStub()
+}
+
 const makeSut = (): SutTypes => {
+  const addAcountStub = makeAddAcount()
   const emailValidatorStub = makeEmailValidator()
-  const sut = new SignUpController(emailValidatorStub)
-  return { sut, emailValidatorStub }
+  const sut = new SignUpController(emailValidatorStub, addAcountStub)
+  return { sut, emailValidatorStub, addAcountStub }
 }
 
 describe('SignUp Controller', () => {
@@ -69,7 +89,7 @@ describe('SignUp Controller', () => {
     expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
 
-    test('Should return 400 if password confirmation fails', async () => {
+  test('Should return 400 if password confirmation fails', async () => {
       const { sut } = makeSut()
       const httpRequest = {
         body: {
@@ -146,5 +166,25 @@ describe('SignUp Controller', () => {
       const httpResponse = await sut.handle(httpRequest)
       expect(httpResponse.statusCode).toBe(500)
       expect(httpResponse.body).toEqual(new ServerError())
+  })
+
+  test('Should call AddAccount with correct values', async () => {
+    const { sut, addAcountStub } = makeSut()
+    // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
+    const addSpy = jest.spyOn(addAcountStub, 'add')
+    const httpRequest = {
+      body: {
+        name: 'nome',
+        email: 'testetest.com.br',
+        password: 'pass',
+        passwordConfirmation: 'pass'
+      }
+    }
+    await sut.handle(httpRequest)
+    expect(addSpy).toHaveBeenCalledWith({
+      name: 'nome',
+        email: 'testetest.com.br',
+        password: 'pass'
+    })
   })
 })
