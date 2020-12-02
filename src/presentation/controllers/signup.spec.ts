@@ -7,16 +7,30 @@ interface SutTypes {
   emailValidatorStub: EmailValidator
 }
 
-const makeSut = (): SutTypes => {
+const makeEmailValidator = (): EmailValidator => {
   class EmailValidatorStub implements EmailValidator {
     // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
     isValid (email: string): boolean {
       return true
     }
   }
-  const emailValidatorStub = new EmailValidatorStub()
+  return new EmailValidatorStub()
+}
+
+const makeSut = (): SutTypes => {
+  const emailValidatorStub = makeEmailValidator()
   const sut = new SignUpController(emailValidatorStub)
   return { sut, emailValidatorStub }
+}
+
+const makeEmailValidatorWithError = (): EmailValidator => {
+  class EmailValidatorStub implements EmailValidator {
+    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
+    isValid (email: string): boolean {
+      throw new Error()
+    }
+  }
+  return new EmailValidatorStub()
 }
 
 describe('SignUp Controller', () => {
@@ -114,25 +128,19 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return 500 if EmailValidator throws error', async () => {
- class EmailValidatorStub implements EmailValidator {
-    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
-    isValid (email: string): boolean {
-      throw new Error()
-    }
-  }
-  const emailValidatorStub = new EmailValidatorStub()
-  const sut = new SignUpController(emailValidatorStub)
+      const emailValidatorStub = makeEmailValidatorWithError()
+      const sut = new SignUpController(emailValidatorStub)
 
-    const httpRequest = {
-      body: {
-        name: 'nome',
-        email: 'testetest.com.br',
-        password: 'pass',
-        passwordConfirmation: 'pass'
+      const httpRequest = {
+        body: {
+          name: 'nome',
+          email: 'testetest.com.br',
+          password: 'pass',
+          passwordConfirmation: 'pass'
+        }
       }
-    }
-    const httpResponse = await sut.handle(httpRequest)
-    expect(httpResponse.statusCode).toBe(500)
-    expect(httpResponse.body).toEqual(new ServerError())
+      const httpResponse = await sut.handle(httpRequest)
+      expect(httpResponse.statusCode).toBe(500)
+      expect(httpResponse.body).toEqual(new ServerError())
   })
 })
