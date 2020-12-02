@@ -23,7 +23,6 @@ const makeSut = (): SutTypes => {
   return { sut, emailValidatorStub }
 }
 
-
 describe('SignUp Controller', () => {
   test('Should return 400 if no name is provided', async () => {
     const { sut } = makeSut()
@@ -69,6 +68,21 @@ describe('SignUp Controller', () => {
     expect(httpResponse.statusCode).toBe(400)
     expect(httpResponse.body).toEqual(new MissingParamError('password'))
   })
+
+    test('Should return 400 if password confirmation fails', async () => {
+      const { sut } = makeSut()
+      const httpRequest = {
+        body: {
+          name: 'nome',
+          email: 'teste@test.com.br',
+          password: 'password',
+          passwordConfirmation: 'invalid_password'
+        }
+      }
+      const httpResponse = await sut.handle(httpRequest)
+      expect(httpResponse.statusCode).toBe(400)
+      expect(httpResponse.body).toEqual(new InvalidParamError('passwordConfirmation'))
+    })
 
   test('Should return 400 if no password is provided', async () => {
     const { sut } = makeSut()
