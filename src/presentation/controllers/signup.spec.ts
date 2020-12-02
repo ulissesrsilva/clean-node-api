@@ -2,6 +2,7 @@ import { SignUpController } from './signup'
 import { MissingParamError } from '../errors/missing-param-error'
 import { InvalidParamError } from '../errors/invalid-param-error'
 import { EmailValidator } from '../protocols/email-validator'
+import { ServerError } from '../errors/server-error'
 
 interface SutTypes {
   sut: SignUpController
@@ -100,6 +101,7 @@ describe('SignUp Controller', () => {
 
   test('Shoud call EmailValidator with correct email', async () => {
     const { sut, emailValidatorStub } = makeSut()
+    // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
     const isValidSpy = jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
     const httpRequest = {
       body: {
@@ -114,9 +116,15 @@ describe('SignUp Controller', () => {
   })
 
   test('Should return 500 if EmailValidator throws error', async () => {
-    const { sut, emailValidatorStub } = makeSut()
-    // spyOn serve para alterar propriedades e comportamentos, mas também para capturar o comportamento intern da funcao
-    jest.spyOn(emailValidatorStub, 'isValid').mockReturnValueOnce(false)
+ class EmailValidatorStub implements EmailValidator {
+    // stub só se preocupa com o retorno, como ele chega lá não é responsabilidade, serve para testar comportamento
+    isValid (email: string): boolean {
+      throw new Error()
+    }
+  }
+  const emailValidatorStub = new EmailValidatorStub()
+  const sut = new SignUpController(emailValidatorStub)
+
     const httpRequest = {
       body: {
         name: 'nome',
@@ -126,7 +134,7 @@ describe('SignUp Controller', () => {
       }
     }
     const httpResponse = await sut.handle(httpRequest)
-    expect(httpResponse.statusCode).toBe(400)
-    expect(httpResponse.body).toEqual(new InvalidParamError('email'))
+    expect(httpResponse.statusCode).toBe(500)
+    expect(httpResponse.body).toEqual(new ServerError())
   })
 })
