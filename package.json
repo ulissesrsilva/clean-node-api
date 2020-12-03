@@ -36,14 +36,5 @@
   },
   "dependencies": {
     "validator": "^13.5.1"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm run test:ci"
-    }
-  },
-  "lint-staged": {
-    "*.ts": ["eslint 'src/**' --fix ", "npm run test:staged"]
   }
 }
