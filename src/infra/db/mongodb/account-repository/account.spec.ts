@@ -1,5 +1,5 @@
 import { MongoHelper } from '../helper/mongodb-helper'
-import { AccountMongoRepository } from './account'
+import { AccountMongoRepository } from './AccountMongoRepository'
 
 describe('Account Mongodb Repository', () => {
     // sempre antes de fazer os testes de integracão precisa
@@ -8,8 +8,17 @@ describe('Account Mongodb Repository', () => {
 
     afterAll(async () => await MongoHelper.disconnect())
 
+    beforeEach(async () => {
+        const accountCollection = await MongoHelper.getCollection('accounts')
+        await accountCollection.deleteMany({})
+    })
+
+    const makeSut = (): AccountMongoRepository => {
+        return new AccountMongoRepository()
+    }
+
     test('should return an account on sucess', async () => {
-      const sut = new AccountMongoRepository()
+      const sut = makeSut()
       const account = await sut.add({
           name: 'any_name',
           email: 'email@mail.com',
